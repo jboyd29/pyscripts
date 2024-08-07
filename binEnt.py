@@ -134,20 +134,20 @@ def plotCentral(conf, bA):
     plt.show()
         
     
-def seq(m, T):
-    return 4*np.pi*(1)*np.power(T,3)*np.power(m/T,2)*(4*kv(2,m/T)+(m/T)*kv(1,m/T))
-
+def seq(T, m):
+    Ndof = 3
+    meq = m/T
+    return 4*np.pi*(Ndof/np.power(2*np.pi,3))*np.power(T,3)*np.power(meq,2)*((4*kv(2,meq))+(meq*kv(1,meq)))
 
 def getEntropyFt(conf, bA, mI):
     tP = np.arange(conf['TPts'])
-    xP = np.arange(conf['XPts'])
-    yP = np.arange(conf['YPts'])
-    zP = np.arange(conf['ZPts'])
     tPts = np.linspace(conf['TauMin'], conf['TauMin']+(conf['TauStepSize']*conf['RecordingFrequency']*conf['TPts']), conf['TPts'])
     sL = []
     for ti in tP:
-        v = np.sum(np.heaviside(bA[ti].flatten()-conf['FinalTemperature'],0) * seq(mI(bA[ti].flatten()), bA[ti].flatten())) # heav(T>FinalTemperature) * seq
-        sL.append([tPts[ti], v*conf['XSpacing']*conf['YSpacing']*conf['ZSpacing']]) # multiply by volume element size
+        Ti = bA[ti].flatten()
+        Tbool = np.heaviside(Ti-(conf['FinalTemperature']/hbarc),0)
+        v = np.sum(Tbool * seq(Ti ,mI(Ti))) # heav(T>FinalTemperature) * seq
+        sL.append([tPts[ti], v*conf['XSpacing']*conf['YSpacing']*conf['ZSpacing']*tPts[ti]]) # multiply by volume element size
     return np.array(sL) 
 
 def readMassData(conf, fp):
