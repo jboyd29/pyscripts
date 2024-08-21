@@ -18,7 +18,7 @@ hbarc = 0.197327
 
 
 ### This is all that needs pointed to the run directory
-aHrunPath = './runs_20200611_1365/7/'
+aHrunPath = './run7/7/'
 
 
 
@@ -43,6 +43,7 @@ def main():
 
     s = getEntropyFt(ini, d, intmD) #evaluate entropy inside freeze-out surface over evolution
     
+    sZE = getStotRap(ini, d, intmD) # entrpoy at less than eta 
 
     #write to file placed beside binary file in same directory
     headL = '#tau[fm/c]\t#S_tot[fm-1]'
@@ -50,16 +51,38 @@ def main():
     np.savetxt(wrTar, s, delimiter='\t', header=headL, fmt='%10.5e' )
     print('total entropy file written to: ', wrTar)
     
+    #write to file placed beside binary file in same directory
+    # headL = '#tau[fm/c]\t#S_tot[fm-1]' << noheader here
+    wrTarEt = aHrunPath+'output/bin/'+hsh+'/StotEta.tsv'
+    np.savetxt(wrTarEt, sZE, delimiter='\t', fmt='%10.5e' )
+    print('total entropy(η) file written to: ', wrTarEt)
+
     
-    #plot
-    plt.plot(s[:,0], s[:,1])
-    plt.yscale('log')
+    ##plot
+    #plt.plot(s[:,0], s[:,1])
+    #plt.xlabel('tau [fm/c]')
+    #plt.ylabel('S_tot')
+    #plt.title(' entropy inside freeze-out surface')
+    #plt.show()
+
+    tPts = np.linspace(ini['TauMin'], ini['TauMin']+(ini['TauStepSize']*ini['RecordingFrequency']*ini['TPts']), ini['TPts'])
+    cmap = plt.get_cmap('viridis')
+    rN = np.linspace(0,1,32)*(ini['ZPts']*ini['ZSpacing']/2)+ini['ZSpacing']
+    plt.style.use('ggplot')
+    plt.figure(figsize=(12,10))
+
+    zi = 1
+    for etaLn in sZE:
+        plt.plot(tPts, etaLn, color=cmap(1-(2*zi/ini['ZPts'])), label=str(rN[zi-1])[:5])
+        zi+=1
+
     plt.xlabel('tau [fm/c]')
-    plt.ylabel('S_tot')
-    plt.title('Unnormalized entropy inside freeze-out surface')
-    plt.show()
-
-
+    plt.ylabel('sTot(η)')
+    plt.title('Total entropy in freezeout at less than η')
+    plt.legend(loc='center left', bbox_to_anchor=(1.1, 0.5))
+    plt.tight_layout()
+    plt.show() #Entropy in freezeout surface at z less than ...
+    plt.style.use('default')
 
 
 
@@ -161,7 +184,31 @@ def readMassData(conf, fp):
 def interpMassD(conf, mD):
     return interp1d(mD[:,0], mD[:,1], kind='cubic')
 
+### Rapidity dependence (Z coord) (entropy within z slice)
 
+def getEntropyFzt(conf, bA, mI):
+    tP = np.arange(conf['TPts'])
+    zP = np.arange(conf['ZPts'])
+    tPts = np.linspace(conf['TauMin'], conf['TauMin']+(conf['TauStepSize']*conf['RecordingFrequency']*conf['TPts']), conf['TPts'])
+    sL = []
+    for ti in tP:
+        pL = []
+        for zi in zP:
+            Ti = bA[ti,:,:,zi].flatten()
+            Tbool = np.heaviside(Ti-(conf['FinalTemperature']/hbarc),0)
+            v = np.sum(Tbool * seq(Ti ,mI(Ti))) # heav(T>FinalTemperature) * seq
+            pL.append(v*conf['XSpacing']*conf['YSpacing']*conf['ZSpacing']*tPts[ti]) # multiply by volume element size
+        sL.append(pL)
+    return np.array(sL)/conf['ZSpacing']
+
+def getStotRap(conf, bA, mI):
+    sZ = getEntropyFzt(conf, bA, mI)
+    if conf['ZPts'] % 2 == 0: #even
+        h = int(conf['ZPts']/2)
+        fold = (sZ[:,h:] + np.flip(sZ[:,:h],axis=1))*conf['ZSpacing']
+        return np.array([np.sum(fold[:,:zi],axis=1) for zi in range(1,1+h)])
+    else:
+        print('PANIC')
 
 
 
