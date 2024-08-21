@@ -41,15 +41,15 @@ def main():
     mDat = readMassData(ini, aHrunPath + ini['RealisticEquationOfStateDirectory'][2:]+'massData.tsv') #choses mass data based on ini
     intmD = interpMassD(ini, mDat) # interpolate mass data
 
-    s = getEntropyFt(ini, d, intmD) #evaluate entropy inside freeze-out surface over evolution
+    #s = getEntropyFt(ini, d, intmD) #evaluate entropy inside freeze-out surface over evolution
     
     sZE = getStotRap(ini, d, intmD) # entrpoy at less than eta 
 
-    #write to file placed beside binary file in same directory
-    headL = '#tau[fm/c]\t#S_tot[fm-1]'
-    wrTar = aHrunPath+'output/bin/'+hsh+'/Stot.tsv'
-    np.savetxt(wrTar, s, delimiter='\t', header=headL, fmt='%10.5e' )
-    print('total entropy file written to: ', wrTar)
+    ##write to file placed beside binary file in same directory
+    #headL = '#tau[fm/c]\t#S_tot[fm-1]'
+    #wrTar = aHrunPath+'output/bin/'+hsh+'/Stot.tsv'
+    #np.savetxt(wrTar, s, delimiter='\t', header=headL, fmt='%10.5e' )
+    #print('total entropy file written to: ', wrTar)
     
     #write to file placed beside binary file in same directory
     # headL = '#tau[fm/c]\t#S_tot[fm-1]' << noheader here
